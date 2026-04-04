@@ -137,8 +137,11 @@
                     </div>
 
                     <div class="input-group">
-                        <label for="date-heure">Date et Heure de l'Opération</label>
-                        <input type="datetime-local" id="date-heure" required>
+                        <label>Date et Heure de l'Opération</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="date" id="date" required style="flex: 1;">
+                            <input type="time" id="heure" required style="flex: 1;">
+                        </div>
                     </div>
 
                     <div class="input-group">

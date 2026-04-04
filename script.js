@@ -96,7 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Récupération des données du formulaire
             const nom = document.getElementById('nom').value;
-            const dateHeure = document.getElementById('date-heure').value;
+            const dateStr = document.getElementById('date').value;
+            const heureStr = document.getElementById('heure').value;
+            const dateHeure = dateStr + " à " + heureStr;
             const message = document.getElementById('message').value;
 
             // Préparation des données pour l'envoi réel
