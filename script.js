@@ -81,7 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    // Form submission simulation
+    // Formulaire de mission - Envoi vers Google Sheets
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNqwSTjq5wQhhSivKchbf1MSCBpp1J6w18Q2TtMQTlE3WgDHqMdFQIV1KFYbownuT1Vw/exec";
+    
     const form = document.getElementById('mission-form');
     const formStatus = document.getElementById('form-status');
 
@@ -90,21 +92,53 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const btn = document.querySelector('.btn-submit');
             const originalText = btn.innerText;
-            btn.innerText = "AUTHENTIFICATION...";
+            btn.innerText = "TRANSMISSION EN COURS...";
             
-            setTimeout(() => {
-                form.reset();
-                btn.innerText = "MISSION ACCEPTÉE √";
-                btn.style.backgroundColor = "#b30000"; // Dark red instead of green
-                formStatus.classList.remove('hidden');
-                
+            // Récupération des données du formulaire
+            const nom = document.getElementById('nom').value;
+            const dateHeure = document.getElementById('date-heure').value;
+            const message = document.getElementById('message').value;
+
+            // Préparation des données pour l'envoi réel
+            const formData = new FormData();
+            formData.append('nom', nom);
+            formData.append('date_heure', dateHeure);
+            formData.append('message', message);
+
+            // Envoi réel vers Google Sheets
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Évite les erreurs de sécurité entre domaines (CORS)
+                body: formData
+            })
+            .then(() => {
+                // Succès (avec no-cors, la réponse est "opaque" donc ne renvoie pas d'erreur réseau si le message est passé)
+                onSuccess(btn, originalText);
+            })
+            .catch(error => {
+                console.error("Erreur lors de la transmission :", error);
+                btn.innerText = "ÉCHEC DE TRANSMISSION";
+                btn.style.backgroundColor = "gray";
                 setTimeout(() => {
                     btn.innerText = originalText;
-                    btn.style.backgroundColor = ""; // Revert to CSS default
-                    formStatus.classList.add('hidden');
-                }, 5000);
-            }, 1500);
+                    btn.style.backgroundColor = "";
+                }, 3000);
+            });
         });
+
+        // Fonction d'animation de succès (réutilisée pour le vrai et faux succès)
+        function onSuccess(btn, originalText) {
+            form.reset();
+            btn.innerText = "MISSION ACCEPTÉE √";
+            btn.style.backgroundColor = "#b30000"; // Rouge foncé
+            formStatus.classList.remove('hidden');
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.backgroundColor = ""; // Reset couleur
+                formStatus.classList.add('hidden');
+            }, 5000);
+        }
     }
 
     // Glitch effect on hover for the main button
