@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Puissance 4 - Mission Impossible</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0d0d0d; color: #f2f2f2; font-family: 'Oswald', sans-serif; display:flex; flex-direction:column; align-items:center; margin:0; padding-top:20px; overflow-x:hidden;}
+        header { text-align: center; margin-bottom: 5px; width:100%;}
+        .btn-retour { display: inline-block; color: #fff; text-decoration: none; padding: 5px 10px; border: 1px solid #8a0000; border-radius: 4px; font-size:0.9rem;}
+        h1 { color: #d30000; margin-top: 10px; font-size: 1.8rem; margin-bottom:5px;}
+        #grid { display: grid; grid-template-columns: repeat(7, 40px); gap: 5px; background: #222; padding: 10px; border-radius: 8px; border: 2px solid #8a0000; box-shadow: 0 0 20px rgba(211,0,0,0.2); touch-action:manipulation;}
+        .cell { width: 40px; height: 40px; background: #0d0d0d; border-radius: 50%; cursor: pointer; transition: background 0.3s;}
+        .cell.p1 { background: #d30000; box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 0 10px #ff0000; }
+        .cell.p2 { background: #f2f2f2; box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 0 10px #ffffff; }
+        .status { margin-top: 15px; font-size: 1.2rem; margin-bottom:10px; }
+        .btn-action { background: #8a0000; color: #fff; border: none; padding: 10px 20px; font-family: 'Oswald', sans-serif; font-size: 1rem; cursor: pointer; border-radius: 4px; margin-top: 10px;}
+        @media (max-width: 400px) { #grid { grid-template-columns: repeat(7, 35px); gap:4px; } .cell { width: 35px; height: 35px; } }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="../index.html#arcade" class="btn-retour">⬅ RETOUR AU QG</a>
+        <h1>HACKING MAINFRAME</h1>
+        <div class="status" id="statusMsg">À toi de jouer (Agent Rouge)</div>
+    </header>
+    <div id="grid"></div>
+    <button class="btn-action hidden" id="resetBtn" onclick="init()">REFAIRE UN HACK</button>
+    <script>
+        const gridEl = document.getElementById('grid');
+        const statusMsg = document.getElementById('statusMsg');
+        const resetBtn = document.getElementById('resetBtn');
+        const rows = 6, cols = 7;
+        let board = [], currentPlayer = 1, gameover = false;
+
+        function init() {
+            gridEl.innerHTML = '';
+            board = []; gameover = false; currentPlayer = 1;
+            statusMsg.innerText = "À toi de jouer (Agent Rouge)";
+            statusMsg.style.color = "#d30000";
+            resetBtn.style.display = 'none';
+            
+            for(let r=0; r<rows; r++) {
+                board[r] = [];
+                for(let c=0; c<cols; c++) {
+                    board[r][c] = 0;
+                    let cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = r; cell.dataset.c = c;
+                    cell.addEventListener('click', () => { if(currentPlayer === 1 && !gameover) drop(c) });
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        function drop(c) {
+            if(gameover) return;
+            for(let r=rows-1; r>=0; r--) {
+                if(board[r][c] === 0) {
+                    board[r][c] = currentPlayer;
+                    updateGrid();
+                    if(checkWin(r, c)) {
+                        gameover = true;
+                        statusMsg.innerText = currentPlayer === 1 ? "ACCÈS ACCORDÉ !" : "SYSTÈME VERROUILLÉ";
+                        statusMsg.style.color = currentPlayer === 1 ? "#d30000" : "#fff";
+                        resetBtn.style.display = 'block';
+                        return;
+                    }
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    if(currentPlayer === 2) {
+                        statusMsg.innerText = "L'IA réfléchit..."; statusMsg.style.color = "#fff";
+                        setTimeout(iaPlay, 500);
+                    } else {
+                        statusMsg.innerText = "À toi de jouer (Agent Rouge)"; statusMsg.style.color = "#d30000";
+                    }
+                    return;
+                }
+            }
+        }
+
+        function iaPlay() {
+            if(gameover) return;
+            let available = [];
+            for(let c=0; c<cols; c++) if(board[0][c] === 0) available.push(c);
+            if(available.length > 0) {
+                // Simple random AI
+                let randomC = available[Math.floor(Math.random() * available.length)];
+                drop(randomC);
+            }
+        }
+
+        function updateGrid() {
+            let cells = gridEl.children;
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    let index = r * cols + c;
+                    cells[index].className = 'cell';
+                    if(board[r][c] === 1) cells[index].classList.add('p1');
+                    else if(board[r][c] === 2) cells[index].classList.add('p2');
+                }
+            }
+        }
+
+        function checkWin(r, c) {
+            return checkLine(r, c, 1, 0) || checkLine(r, c, 0, 1) || checkLine(r, c, 1, 1) || checkLine(r, c, 1, -1);
+        }
+        function checkLine(r, c, dr, dc) {
+            let count = 1, p = board[r][c];
+            for(let i=1; i<4; i++) {
+                if(r+dr*i >= 0 && r+dr*i < rows && c+dc*i >= 0 && c+dc*i < cols && board[r+dr*i][c+dc*i] === p) count++; else break;
+            }
+            for(let i=1; i<4; i++) {
+                if(r-dr*i >= 0 && r-dr*i < rows && c-dc*i >= 0 && c-dc*i < cols && board[r-dr*i][c-dc*i] === p) count++; else break;
+            }
+            return count >= 4;
+        }
+
+        init();
+    </script>
+</body>
+</html>

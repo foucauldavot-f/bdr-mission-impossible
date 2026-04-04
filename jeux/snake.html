@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SNAKE - Mission Impossible</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0d0d; --text-color: #f2f2f2; --red-main: #d30000;
+            --red-dark: #8a0000; --grid-bg: #1a1a1a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; padding-top: 20px;}
+        header { text-align: center; margin-bottom: 20px; }
+        .btn-retour { display: inline-block; color: var(--text-color); text-decoration: none; font-family: 'Oswald', sans-serif; padding: 5px 10px; border: 1px solid var(--red-dark); border-radius: 4px; transition: 0.3s; margin-bottom: 15px;}
+        .btn-retour:hover { background: var(--red-main); }
+        .logo { font-family: 'Oswald', sans-serif; font-size: 2.5rem; letter-spacing: 2px; color: var(--red-main); }
+        .score { font-family: 'Oswald', sans-serif; font-size: 1.5rem; margin-top: 10px; }
+        canvas { background: var(--grid-bg); border: 2px solid var(--red-dark); box-shadow: 0 0 15px rgba(211, 0, 0, 0.3); border-radius: 4px; max-width: 95vw;}
+        .mobile-controls { display: grid; grid-template-columns: 50px 50px 50px; gap: 10px; margin-top: 20px; justify-content: center; }
+        .mobile-controls div { visibility: hidden; } /* placeholders */
+        .btn-dir { background: var(--grid-bg); color: #fff; border: 1px solid var(--red-main); padding: 15px; border-radius: 50%; font-size: 1rem; cursor: pointer; user-select: none; touch-action: manipulation;}
+        .btn-dir:active { background: var(--red-main); }
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; }
+        .hidden { display: none !important; }
+        .btn-action { background: var(--red-dark); color: #fff; border: none; padding: 12px 20px; font-family: 'Oswald', sans-serif; font-size: 1.2rem; cursor: pointer; border-radius: 4px; margin-top: 20px;}
+    </style>
+</head>
+<body>
+    <header>
+        <a href="../index.html#arcade" class="btn-retour">⬅ RETOUR AU QG</a>
+        <h1 class="logo">SNAKE: OPÉRATION OUROBOROS</h1>
+        <div class="score">SCORE : <span id="scoreVal">0</span></div>
+    </header>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    
+    <div class="mobile-controls">
+        <div></div><button class="btn-dir" id="btn-up">▲</button><div></div>
+        <button class="btn-dir" id="btn-left">◀</button><button class="btn-dir" id="btn-down">▼</button><button class="btn-dir" id="btn-right">▶</button>
+    </div>
+
+    <div id="overlay" class="hidden">
+        <h2 style="color:var(--red-main); font-family:'Oswald', sans-serif; font-size:3rem; margin-bottom:10px;">LIAISON PERDUE</h2>
+        <p>Score final : <span id="finalScore">0</span></p>
+        <button class="btn-action" onclick="resetGame()">RELANCER LA CONNEXION</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("scoreVal");
+        let box = 20;
+        let snake = [];
+        snake[0] = { x: 9 * box, y: 10 * box };
+        let food = { x: Math.floor(Math.random()*19+1) * box, y: Math.floor(Math.random()*19+1) * box };
+        let score = 0;
+        let d = "";
+        let gameInfo;
+        let isGameOver = false;
+
+        // Resize for mobile
+        if(window.innerWidth < 420) {
+            canvas.width = 320; canvas.height = 320; box = 16;
+            food = { x: Math.floor(Math.random()*19+1) * box, y: Math.floor(Math.random()*19+1) * box };
+            snake[0] = { x: 9 * box, y: 10 * box };
+        }
+
+        document.addEventListener("keydown", direction);
+        function direction(event) {
+            if(event.keyCode == 37 && d != "RIGHT") d = "LEFT";
+            else if(event.keyCode == 38 && d != "DOWN") d = "UP";
+            else if(event.keyCode == 39 && d != "LEFT") d = "RIGHT";
+            else if(event.keyCode == 40 && d != "UP") d = "DOWN";
+        }
+        
+        document.getElementById("btn-left").addEventListener("touchstart", (e)=>{e.preventDefault(); if(d != "RIGHT") d = "LEFT"});
+        document.getElementById("btn-up").addEventListener("touchstart", (e)=>{e.preventDefault(); if(d != "DOWN") d = "UP"});
+        document.getElementById("btn-right").addEventListener("touchstart", (e)=>{e.preventDefault(); if(d != "LEFT") d = "RIGHT"});
+        document.getElementById("btn-down").addEventListener("touchstart", (e)=>{e.preventDefault(); if(d != "UP") d = "DOWN"});
+        document.getElementById("btn-left").addEventListener("click", ()=>{if(d != "RIGHT") d = "LEFT"});
+        document.getElementById("btn-up").addEventListener("click", ()=>{if(d != "DOWN") d = "UP"});
+        document.getElementById("btn-right").addEventListener("click", ()=>{if(d != "LEFT") d = "RIGHT"});
+        document.getElementById("btn-down").addEventListener("click", ()=>{if(d != "UP") d = "DOWN"});
+
+        function collision(head, array) {
+            for(let i = 0; i < array.length; i++) {
+                if(head.x == array[i].x && head.y == array[i].y) return true;
+            }
+            return false;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for(let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i == 0) ? "#d30000" : "#8a0000";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                ctx.strokeStyle = "#1a1a1a";
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            ctx.fillStyle = "#fff"; // Food is white classified packet
+            ctx.shadowBlur = 10; ctx.shadowColor = "#fff";
+            ctx.fillRect(food.x, food.y, box, box);
+            ctx.shadowBlur = 0; // reset
+
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if(d == "LEFT") snakeX -= box;
+            if(d == "UP") snakeY -= box;
+            if(d == "RIGHT") snakeX += box;
+            if(d == "DOWN") snakeY += box;
+
+            if(snakeX == food.x && snakeY == food.y) {
+                score++;
+                scoreEl.innerHTML = score;
+                food = {
+                    x: Math.floor(Math.random()*(canvas.width/box-2)+1) * box,
+                    y: Math.floor(Math.random()*(canvas.height/box-2)+1) * box
+                };
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(gameInfo);
+                isGameOver = true;
+                document.getElementById('overlay').classList.remove('hidden');
+                document.getElementById('finalScore').innerText = score;
+            }
+
+            snake.unshift(newHead);
+        }
+
+        function resetGame() {
+            snake = [];
+            snake[0] = { x: 9 * box, y: 10 * box };
+            score = 0;
+            d = "";
+            scoreEl.innerHTML = score;
+            food = {
+                x: Math.floor(Math.random()*(canvas.width/box-2)+1) * box,
+                y: Math.floor(Math.random()*(canvas.height/box-2)+1) * box
+            };
+            document.getElementById('overlay').classList.add('hidden');
+            gameInfo = setInterval(draw, 100);
+            isGameOver = false;
+        }
+
+        gameInfo = setInterval(draw, 100);
+    </script>
+</body>
+</html>

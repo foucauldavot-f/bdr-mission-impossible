@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Démineur - Mission Impossible</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0d0d0d; color: #f2f2f2; font-family: 'Oswald', sans-serif; display:flex; flex-direction:column; align-items:center; margin:0; padding-top:20px; overflow-x:hidden;}
+        header { text-align: center; margin-bottom: 10px; width:100%;}
+        .btn-retour { display: inline-block; color: #fff; text-decoration: none; padding: 5px 10px; border: 1px solid #8a0000; border-radius: 4px; font-size:0.9rem;}
+        h1 { color: #d30000; margin-top: 10px; font-size: 2rem; margin-bottom:5px;}
+        #grid { display: grid; gap: 2px; background: #333; border: 2px solid #d30000; padding:2px; margin-top:10px; touch-action:manipulation; user-select:none; -webkit-user-select:none;}
+        .cell { width: 35px; height: 35px; background: #1a1a1a; display:flex; justify-content:center; align-items:center; font-size:1.2rem; font-weight:bold; cursor:pointer;}
+        .cell.revealed { background: #0d0d0d; border: 1px solid #222; }
+        .cell.flag { color: #d30000; }
+        .c1 {color: #00ff00;} .c2 {color: #ffff00;} .c3 {color: #ff8800;} .c4,.c5,.c6,.c7,.c8 {color: #ff0000;}
+        .status { margin-top:10px; font-size:1.2rem; }
+        .btn-action { background: #8a0000; color: #fff; border: none; padding: 10px 20px; font-family: 'Oswald', sans-serif; font-size: 1rem; cursor: pointer; border-radius: 4px; margin-top: 15px;}
+        .controls-info { font-size: 0.8rem; color: #888; margin-top: 10px; max-width: 90vw; text-align: center;}
+    </style>
+</head>
+<body>
+    <header>
+        <a href="../index.html#arcade" class="btn-retour">⬅ RETOUR AU QG</a>
+        <h1>PROTOCOLE DÉMOLITION</h1>
+        <div class="status">Bombes: <span id="bombCount">0</span> | Statut: <span id="msg">ACTIF</span></div>
+    </header>
+    <div id="grid"></div>
+    <button class="btn-action" onclick="init()">RECHARGER LE SECTEUR</button>
+    <div class="controls-info">
+        PC : Clic Gauche = Découvrir | Clic Droit = Drapeau 🚩<br>
+        MOBILE : Tap Court = Découvrir | Tap Long = Drapeau 🚩
+    </div>
+    <script>
+        const gridEl = document.getElementById('grid');
+        const msgEl = document.getElementById('msg');
+        let cols = 9, rows = 9, bombCount = 10;
+        let grid = [], gameover = false, flags = 0;
+        let touchTimer = null;
+
+        function init() {
+            gridEl.innerHTML = '';
+            gridEl.style.gridTemplateColumns = `repeat(${cols}, 35px)`;
+            grid = []; gameover = false; flags = 0;
+            document.getElementById('bombCount').innerText = bombCount;
+            msgEl.innerText = "ACTIF"; msgEl.style.color = "#fff";
+            
+            for(let r=0; r<rows; r++) {
+                grid[r] = [];
+                for(let c=0; c<cols; c++) {
+                    let cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = r; cell.dataset.c = c;
+                    
+                    // Mouse controls
+                    cell.addEventListener('click', (e) => { if(e.pointerType !== 'touch') clickCell(r, c) });
+                    cell.addEventListener('contextmenu', (e) => { e.preventDefault(); flagCell(r, c); });
+                    
+                    // Touch controls (long press = flag)
+                    cell.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (!touchTimer) {
+                            touchTimer = setTimeout(() => { flagCell(r,c); touchTimer = null; }, 500);
+                        }
+                    }, {passive:false});
+                    cell.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        if (touchTimer) { clearTimeout(touchTimer); touchTimer=null; clickCell(r,c); }
+                    });
+
+                    gridEl.appendChild(cell);
+                    grid[r][c] = { obj: cell, isBomb: false, revealed: false, flagged: false, neighbors: 0 };
+                }
+            }
+            
+            let b = 0;
+            while(b < bombCount) {
+                let r = Math.floor(Math.random()*rows), c = Math.floor(Math.random()*cols);
+                if(!grid[r][c].isBomb) { grid[r][c].isBomb = true; b++; }
+            }
+            
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    if(!grid[r][c].isBomb) {
+                        let total = 0;
+                        for(let i=-1; i<=1; i++) for(let j=-1; j<=1; j++) {
+                            if(r+i>=0 && r+i<rows && c+j>=0 && c+j<cols && grid[r+i][c+j].isBomb) total++;
+                        }
+                        grid[r][c].neighbors = total;
+                    }
+                }
+            }
+        }
+
+        function clickCell(r, c) {
+            if(gameover || grid[r][c].revealed || grid[r][c].flagged) return;
+            let cell = grid[r][c];
+            cell.revealed = true;
+            cell.obj.classList.add('revealed');
+            
+            if(cell.isBomb) {
+                gameOverShow();
+            } else {
+                if(cell.neighbors > 0) {
+                    cell.obj.innerText = cell.neighbors;
+                    cell.obj.classList.add(`c${cell.neighbors}`);
+                } else {
+                    for(let i=-1; i<=1; i++) for(let j=-1; j<=1; j++) {
+                        if(r+i>=0 && r+i<rows && c+j>=0 && c+j<cols) clickCell(r+i, c+j);
+                    }
+                }
+                checkWin();
+            }
+        }
+
+        function flagCell(r, c) {
+            if(gameover || grid[r][c].revealed) return;
+            let cell = grid[r][c];
+            cell.flagged = !cell.flagged;
+            cell.obj.innerText = cell.flagged ? '🚩' : '';
+            if(cell.flagged) cell.obj.classList.add('flag'); else cell.obj.classList.remove('flag');
+            flags += cell.flagged ? 1 : -1;
+            document.getElementById('bombCount').innerText = bombCount - flags;
+        }
+
+        function gameOverShow() {
+            gameover = true;
+            msgEl.innerText = "DÉTONATION !"; msgEl.style.color = "#d30000";
+            for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
+                if(grid[r][c].isBomb) { grid[r][c].obj.innerText = '💣'; grid[r][c].obj.classList.add('revealed'); }
+            }
+        }
+
+        function checkWin() {
+            let win = true;
+            for(let r=0; r<rows; r++) for(let c=0; c<cols; c++) {
+                if(!grid[r][c].isBomb && !grid[r][c].revealed) win = false;
+            }
+            if(win) { gameover = true; msgEl.innerText = "SÉCURISÉ"; msgEl.style.color = "#00ff00"; }
+        }
+
+        init();
+    </script>
+</body>
+</html>

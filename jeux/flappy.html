@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ÉVASION - Mission Impossible</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0d0d0d; color: #f2f2f2; font-family: 'Oswald', sans-serif; display:flex; flex-direction:column; align-items:center; height:100vh; overflow:hidden; margin:0; padding-top:10px;}
+        header { text-align: center; margin: 10px 0; width:100%;}
+        .btn-retour { display: inline-block; color: #fff; text-decoration: none; padding: 5px 10px; border: 1px solid #8a0000; border-radius: 4px; font-size:0.9rem;}
+        canvas { background: #1a1a1a; display:block; border:2px solid #8a0000; box-shadow: 0 0 20px rgba(211,0,0,0.2); touch-action:none;}
+        #scoreBoard { position:absolute; top: 110px; font-size: 2.5rem; color: #fff; font-weight:bold; z-index:5; text-shadow: 0 0 10px #000;}
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="../index.html#arcade" class="btn-retour">⬅ RETOUR AU QG</a>
+        <h1 style="color:#d30000; font-size:1.8rem; margin:5px 0;">INFILTRATION DRONE</h1>
+    </header>
+    <div id="scoreBoard">0</div>
+    <canvas id="flappyCanvas" width="320" height="480"></canvas>
+    <script>
+        const canvas = document.getElementById('flappyCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreBoard = document.getElementById('scoreBoard');
+
+        // Adapters pour petits écrans
+        if(window.innerHeight < 600) { canvas.height = 400; }
+
+        let frames = 0, score = 0;
+        let state = { current: 0, getReady: 0, game: 1, over: 2 };
+        
+        function action() {
+            switch(state.current){
+                case state.getReady: state.current = state.game; break;
+                case state.game: drone.flap(); break;
+                case state.over: pipes.reset(); drone.reset(); score = 0; scoreBoard.innerText = 0; state.current = state.getReady; break;
+            }
+        }
+
+        canvas.addEventListener("click", action);
+        canvas.addEventListener("touchstart", (e) => { e.preventDefault(); action(); }, {passive:false});
+        document.addEventListener("keydown", (e) => { if(e.code==="Space") { e.preventDefault(); action(); }});
+
+        const drone = {
+            x: 50, y: 150, width: 20, height: 20,
+            gravity: 0.35, jump: 5.5, speed: 0,
+            draw: function() {
+                ctx.fillStyle = "#ff0000";
+                ctx.shadowBlur = 10; ctx.shadowColor = "#f00";
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.shadowBlur = 0;
+            },
+            flap: function() { this.speed = -this.jump; },
+            update: function() {
+                if(state.current == state.getReady) { this.y = 150; } else {
+                    this.speed += this.gravity;
+                    this.y += this.speed;
+                    if(this.y + this.height >= canvas.height || this.y < 0) { state.current = state.over; }
+                }
+            },
+            reset: function() { this.speed = 0; }
+        };
+
+        const pipes = {
+            position: [], width: 50, gap: 130, dx: 2.5,
+            draw: function() {
+                for(let i=0; i<this.position.length; i++){
+                    let p = this.position[i];
+                    let topY = p.y;
+                    let bottomY = p.y + this.gap;
+                    ctx.fillStyle = "#5c0000";
+                    ctx.fillRect(p.x, 0, this.width, topY);
+                    ctx.fillRect(p.x, bottomY, this.width, canvas.height - bottomY);
+                    ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 2;
+                    ctx.strokeRect(p.x, 0, this.width, topY);
+                    ctx.strokeRect(p.x, bottomY, this.width, canvas.height - bottomY);
+                }
+            },
+            update: function() {
+                if(state.current !== state.game) return;
+                if(frames % 90 == 0) { this.position.push({ x: canvas.width, y: Math.max(50, Math.random()*(canvas.height - this.gap - 100)) }); }
+                for(let i=0; i<this.position.length; i++){
+                    let p = this.position[i];
+                    
+                    if(drone.x + drone.width > p.x && drone.x < p.x + this.width && drone.y < p.y && drone.y + drone.height > 0) { state.current = state.over; }
+                    if(drone.x + drone.width > p.x && drone.x < p.x + this.width && drone.y + drone.height > p.y + this.gap && drone.y < canvas.height) { state.current = state.over; }
+                    
+                    p.x -= this.dx;
+                    if(p.x + this.width <= 0) { this.position.shift(); score++; scoreBoard.innerText = score; }
+                }
+            },
+            reset: function() { this.position = []; }
+        };
+
+        function draw() {
+            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0,0,canvas.width,canvas.height);
+            pipes.draw(); drone.draw();
+            if(state.current == state.getReady) {
+                ctx.fillStyle = "#fff"; ctx.font = "20px Oswald"; ctx.fillText("CLIQUEZ POUR DÉCOLLER", 60, canvas.height/2);
+            } else if(state.current == state.over) {
+                ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = "#ff0000"; ctx.font = "30px Oswald"; ctx.fillText("DRONE DÉTRUIT", 65, canvas.height/2-20);
+                ctx.fillStyle = "#fff"; ctx.font = "20px Oswald"; ctx.fillText("CLIQUEZ POUR REJOUER", 60, canvas.height/2+20);
+            }
+        }
+        function update() { drone.update(); pipes.update(); }
+        function loop() { update(); draw(); frames++; requestAnimationFrame(loop); }
+        loop();
+    </script>
+</body>
+</html>
