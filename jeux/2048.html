@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2048 - Mission Impossible</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="2048.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../index.html#arcade" class="btn-retour">⬅ RETOUR AU QG</a>
+            <h1 class="logo">2<span>0</span>4<span>8</span></h1>
+            <div class="scores-container">
+                <div class="score-box">
+                    <span class="score-title">NIV. ACCRÉDITATION</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="score-title">MEILLEUR RECORD</span>
+                    <span id="best-score">0</span>
+                </div>
+            </div>
+            <p class="mission-text">MISSION : Saisir et fusionner les données pour atteindre 2048. Les contrôles sont tactiles (swipe) ou flèches directionnelles.</p>
+            <button id="restart-btn" class="btn-action">RÉINITIALISER LE SYSTÈME</button>
+        </header>
+
+        <main id="game-board">
+            <div class="grid">
+                <!-- 16 cells -->
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            </div>
+            <div id="tile-container"></div>
+            <div id="game-over" class="hidden">
+                <h2>SYSTÈME COMPROMIS</h2>
+                <p>Aucun mouvement possible.</p>
+                <button class="btn-action restart-btn-over">NOUVELLE TENTATIVE</button>
+            </div>
+            <div id="game-won" class="hidden">
+                <h2>FICHIER DÉCRYPTÉ</h2>
+                <p>Vous avez atteint 2048.</p>
+                <button class="btn-action keep-playing-btn">CONTINUER</button>
+            </div>
+        </main>
+    </div>
+    <script src="2048.js"></script>
+</body>
+</html>

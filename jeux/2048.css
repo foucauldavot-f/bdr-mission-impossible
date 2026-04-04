@@ -1,0 +1,239 @@
+:root {
+    --bg-color: #0d0d0d;
+    --text-color: #f2f2f2;
+    --red-main: #d30000;
+    --red-dark: #8a0000;
+    --grid-bg: #1a1a1a;
+    --cell-empty: #262626;
+    --transition-speed: 150ms;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    width: 400px;
+    max-width: 90vw;
+    margin: 20px auto;
+}
+
+/* Header & Typography */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.btn-retour {
+    display: inline-block;
+    color: var(--text-color);
+    text-decoration: none;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    padding: 5px 10px;
+    border: 1px solid var(--red-dark);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.btn-retour:hover {
+    background: var(--red-main);
+    border-color: var(--red-main);
+}
+
+.logo {
+    font-family: 'Oswald', sans-serif;
+    font-size: 4rem;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    letter-spacing: 4px;
+}
+.logo span {
+    color: var(--red-main);
+}
+
+.scores-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.score-box {
+    background: var(--grid-bg);
+    padding: 10px 20px;
+    border-radius: 6px;
+    border-left: 3px solid var(--red-main);
+}
+
+.score-title {
+    display: block;
+    font-size: 0.65rem;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    font-family: 'Oswald', sans-serif;
+}
+
+#score, #best-score {
+    font-size: 1.5rem;
+    font-weight: bold;
+    font-family: 'Oswald', sans-serif;
+}
+
+.mission-text {
+    font-size: 0.85rem;
+    color: #bbb;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.btn-action {
+    background: var(--red-dark);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    text-transform: uppercase;
+    transition: background 0.3s;
+}
+
+.btn-action:hover {
+    background: var(--red-main);
+}
+
+/* Game Board */
+#game-board {
+    position: relative;
+    background: var(--grid-bg);
+    padding: 10px;
+    border-radius: 8px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    touch-action: none; /* Prevent scrolling when swiping */
+    border: 2px solid var(--red-dark);
+    box-shadow: 0 0 20px rgba(211, 0, 0, 0.2);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+}
+
+.cell {
+    background: var(--cell-empty);
+    border-radius: 6px;
+    width: 100%;
+    height: 100%;
+}
+
+#tile-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 10;
+}
+
+.tile {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Oswald', sans-serif;
+    font-weight: bold;
+    border-radius: 6px;
+    transition: transform var(--transition-speed) ease-in-out;
+}
+
+.tile-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    animation: appear 0.2s;
+}
+
+@keyframes appear {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+.tile-merged .tile-inner {
+    animation: pop 0.2s;
+}
+
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* Overlay Game Over / Win */
+#game-over, #game-won {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    text-align: center;
+}
+
+#game-over h2, #game-won h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.5rem;
+    color: var(--red-main);
+    margin-bottom: 10px;
+}
+
+#game-over p, #game-won p {
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Tile Colors - Dark & Red Theme */
+.tile-2 .tile-inner { background: #333; color: #fff; font-size: 2.5rem; }
+.tile-4 .tile-inner { background: #444; color: #fff; font-size: 2.5rem; }
+.tile-8 .tile-inner { background: #5a1a1a; color: #fff; font-size: 2.5rem; }
+.tile-16 .tile-inner { background: #731b1b; color: #fff; font-size: 2.2rem; }
+.tile-32 .tile-inner { background: #8c1e1e; color: #fff; font-size: 2.2rem; }
+.tile-64 .tile-inner { background: #a62020; color: #fff; font-size: 2.2rem; }
+.tile-128 .tile-inner { background: #bf2323; color: #fff; font-size: 1.8rem; box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+.tile-256 .tile-inner { background: #d92525; color: #fff; font-size: 1.8rem; box-shadow: 0 0 15px rgba(255,0,0,0.4); }
+.tile-512 .tile-inner { background: #f22626; color: #fff; font-size: 1.8rem; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+.tile-1024 .tile-inner { background: #ff3333; color: #fff; font-size: 1.5rem; box-shadow: 0 0 25px rgba(255,0,0,0.6); }
+.tile-2048 .tile-inner { background: #fff; color: var(--red-main); font-size: 1.5rem; box-shadow: 0 0 30px rgba(255,255,255,0.7); }
+.tile-super .tile-inner { background: #ffaa00; color: #000; font-size: 1.3rem; }
