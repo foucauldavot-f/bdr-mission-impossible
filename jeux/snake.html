@@ -66,7 +66,7 @@
             path: [],
             head: { x: canvas.width/2, y: canvas.height/2 },
             dx: 1, dy: 0,
-            speed: isMobile ? 3 : 4,
+            speed: isMobile ? 1.5 : 2.5,
             baseLen: 40,
             radius: 8,
             draw: function() {
@@ -134,7 +134,34 @@
         document.getElementById("btn-right").addEventListener("touchstart", (e)=>{e.preventDefault(); handleDir(1,0);});
         document.getElementById("btn-down").addEventListener("touchstart", (e)=>{e.preventDefault(); handleDir(0,1);});
 
-        // Also prevent canvas swipe scrolling
+        // Swipe tactile
+        let touchStartX = 0;
+        let touchStartY = 0;
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: false});
+
+        document.addEventListener('touchend', e => {
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            let dx = touchEndX - touchStartX;
+            let dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > 30) {
+                    if (dx > 0) handleDir(1, 0); // droite
+                    else handleDir(-1, 0); // gauche
+                }
+            } else {
+                if (Math.abs(dy) > 30) {
+                    if (dy > 0) handleDir(0, 1); // bas
+                    else handleDir(0, -1); // haut
+                }
+            }
+        }, {passive: false});
+
+        // Prevent canvas swipe scrolling
         canvas.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
 
         function isCollision() {
